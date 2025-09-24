@@ -275,8 +275,7 @@ def chart_data():
         "steps": [d.steps for d in history],
         "heart_rate": [d.heart_rate for d in history]
     })
-    
-#
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
