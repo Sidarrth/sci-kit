@@ -2,108 +2,123 @@
 {% block title %}Your Dashboard{% endblock %}
 {% block content %}
 <div class="px-4 py-6 sm:px-0">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-100">Welcome back, {{ current_user.username }}!</h1>
-        <a href="{{ url_for('simulate_day') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-            Simulate New Day
-        </a>
+    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <h1 class="text-3xl font-bold text-gray-100">Welcome, {{ current_user.username }}!</h1>
+        <a href="{{ url_for('simulate_day') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition">Simulate New Day</a>
     </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content Column -->
+        <div class="lg:col-span-2 space-y-8">
 
-    {% if no_data %}
-    <div class="text-center bg-gray-800 p-10 rounded-lg fade-in">
-        <p class="text-xl text-gray-300">No health data found for your account.</p>
-        <p class="text-gray-400 mt-2">Click "Simulate New Day" to generate sample data, or use the form below to log your first entry.</p>
-    </div>
-    {% endif %}
+            <!-- AI-Powered Insights Section -->
+            <div class="bg-gray-800 rounded-xl p-6 border border-emerald-800 shadow-lg">
+                <h3 class="text-xl font-semibold text-emerald-400 mb-4 text-center">Your Proactive AI Plan</h3>
+                <div class="divide-y divide-gray-700">
+                    
+                    <!-- Environmental Advisor Card -->
+                    {% if insights.environment %}
+                    <div class="flex items-center gap-4 py-3">
+                        <span class="text-2xl">🌦️</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-200">{{ insights.environment.title }}</h4>
+                            <p class="text-sm text-gray-400">{{ insights.environment.message }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- AI Time-Finder -->
+                    {% if insights.slots %}
+                    <div class="flex items-center gap-4 py-3">
+                        <span class="text-2xl">🗓️</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-200">AI-Scheduled Time</h4>
+                            <p class="text-sm text-gray-400">
+                                Best time for a workout today: <strong class="text-sky-300">{{ insights.slots.workout }}</strong>.
+                                {% if insights.slots.hobbies %}
+                                <br>Good times for hobbies: <strong class="text-violet-300">{{ insights.slots.hobbies | join(', ') }}</strong>.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
 
-    <!-- NEW: Manual Data Entry Form -->
-    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-lg mb-8">
-        <h3 class="text-xl font-semibold text-gray-100 mb-4">Manually Log or Update a Day</h3>
-        <form action="{{ url_for('add_data') }}" method="post" class="space-y-4">
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                    <label for="date" class="block text-sm font-medium text-gray-300">Date</label>
-                    <input type="date" name="date" id="date" value="{{ today_date }}" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" required>
-                </div>
-                <div>
-                    <label for="steps" class="block text-sm font-medium text-gray-300">Steps</label>
-                    <input type="number" name="steps" id="steps" placeholder="e.g., 8500" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" required>
-                </div>
-            </div>
-            <div class="grid md:grid-cols-3 gap-4">
-                <div>
-                    <label for="sleep" class="block text-sm font-medium text-gray-300">Sleep (hours)</label>
-                    <input type="number" step="0.1" name="sleep" id="sleep" placeholder="e.g., 7.5" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" required>
-                </div>
-                <div>
-                    <label for="heart_rate" class="block text-sm font-medium text-gray-300">Resting HR</label>
-                    <input type="number" name="heart_rate" id="heart_rate" placeholder="e.g., 62" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" required>
-                </div>
-                <div>
-                    <label for="water_intake" class="block text-sm font-medium text-gray-300">Water (L)</label>
-                    <input type="number" step="0.1" name="water_intake" id="water_intake" placeholder="e.g., 2.5" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                </div>
-            </div>
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                    <label for="calories_burned" class="block text-sm font-medium text-gray-300">Calories Burned</label>
-                    <input type="number" name="calories_burned" id="calories_burned" placeholder="e.g., 450" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                </div>
-                <div>
-                    <label for="calories_intake" class="block text-sm font-medium text-gray-300">Calories Intake</label>
-                    <input type="number" name="calories_intake" id="calories_intake" placeholder="e.g., 2200" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                </div>
-            </div>
-            <div class="grid md:grid-cols-3 gap-4">
-                <div>
-                    <label for="protein_g" class="block text-sm font-medium text-gray-300">Protein (g)</label>
-                    <input type="number" name="protein_g" id="protein_g" placeholder="e.g., 120" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                </div>
-                <div>
-                    <label for="carbs_g" class="block text-sm font-medium text-gray-300">Carbs (g)</label>
-                    <input type="number" name="carbs_g" id="carbs_g" placeholder="e.g., 250" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                </div>
-                <div>
-                    <label for="fats_g" class="block text-sm font-medium text-gray-300">Fats (g)</label>
-                    <input type="number" name="fats_g" id="fats_g" placeholder="e.g., 70" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                </div>
-            </div>
-
-            <!-- New hobby fields -->
-            <div class="grid md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label for="existing_hobby_activity" class="block text-sm font-medium text-gray-300">Existing Hobby Activity</label>
-                    <input type="text" name="existing_hobby_activity" id="existing_hobby_activity" placeholder="Describe activity"
-                           class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200
-                                  focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                </div>
-                <div>
-                    <label for="new_hobby_activity" class="block text-sm font-medium text-gray-300">New Hobby Activity</label>
-                    <input type="text" name="new_hobby_activity" id="new_hobby_activity" placeholder="Describe activity"
-                           class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-200
-                                  focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
+                    <!-- Mind-Body Connection -->
+                    {% if insights.mind_body %}
+                    <div class="flex items-center gap-4 py-3">
+                        <span class="text-2xl">🧠</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-200">{{ insights.mind_body.title }}</h4>
+                            <p class="text-sm text-gray-400">{{ insights.mind_body.message }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Stress & Burnout Alert -->
+                    {% if insights.stress %}
+                    <div class="flex items-center gap-4 py-3">
+                        <span class="text-2xl">⚠️</span>
+                        <div>
+                            <h4 class="font-semibold text-amber-300">{{ insights.stress.title }}</h4>
+                            <p class="text-sm text-gray-400">{{ insights.stress.message }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
-            <div class="text-right">
-                <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
-                    Log Data
-                </button>
+            <!-- Log Your Mood -->
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                 <h3 class="text-xl font-semibold text-gray-100 mb-4">How are you feeling right now?</h3>
+                 <form action="{{ url_for('log_mood') }}" method="post" class="flex items-center justify-center flex-wrap gap-2">
+                    <label class="text-gray-400">Low</label>
+                    {% for i in range(1, 6) %}
+                    <input type="radio" name="mood_score" value="{{ i }}" id="mood_{{i}}" class="peer hidden" required>
+                    <label for="mood_{{i}}" class="w-12 h-12 flex items-center justify-center rounded-full text-xl cursor-pointer bg-gray-700 peer-checked:bg-sky-600 peer-checked:text-white transition">{{ i }}</label>
+                    {% endfor %}
+                    <label class="text-gray-400">High</label>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg ml-4">Log Mood</button>
+                 </form>
             </div>
-        </form>
-    </div>
 
-    {% if not no_data %}
-    <div class="space-y-8 fade-in">
-        <!-- [All existing dashboard content like Proactive Plan, Insights, Charts, etc. goes here] -->
-        <div class="bg-gray-800 rounded-xl p-6 border border-emerald-800 shadow-lg">
-            <h3 class="text-xl font-semibold text-emerald-400 mb-4 text-center">Your Proactive Plan for Today</h3>
-            <p class="text-center text-gray-400">Analysis and insights based on your data will appear here.</p>
+            <!-- Manual Data Entry Form -->
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-100 mb-4">Manually Log a Day's Full Data</h3>
+                <form action="{{ url_for('add_data') }}" method="post" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-300">Date</label>
+                            <input type="date" name="date" value="{{ today_date }}" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
+                        </div>
+                        <div>
+                            <label for="steps" class="block text-sm font-medium text-gray-300">Steps</label>
+                            <input type="number" name="steps" placeholder="e.g., 8500" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
+                        </div>
+                        <div>
+                            <label for="sleep" class="block text-sm font-medium text-gray-300">Sleep (hours)</label>
+                            <input type="number" step="0.1" name="sleep" placeholder="e.g., 7.5" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
+                        </div>
+                        <div>
+                            <label for="heart_rate" class="block text-sm font-medium text-gray-300">Resting HR (bpm)</label>
+                            <input type="number" name="heart_rate" placeholder="e.g., 62" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
+                        </div>
+                        <div class="md:col-span-2">
+                             <label for="calories_burned" class="block text-sm font-medium text-gray-300">Calories Burned (from exercise)</label>
+                            <input type="number" name="calories_burned" placeholder="e.g., 450" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg">Log Daily Data</button>
+                </form>
+            </div>
         </div>
-        <!-- ... Other sections for charts and insights would go here ... -->
+        
+        <!-- Right Sidebar (Placeholder for Leaderboard, etc.) -->
+        <div class="space-y-8">
+             <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-100 text-center">Leaderboard coming soon!</h3>
+             </div>
+        </div>
     </div>
-    {% endif %}
 </div>
-
-<!-- [Existing script tags for mood logging and charts can remain here] -->
 {% endblock %}
+

@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block title %}AI Assistant{% endblock %}
+{% block content %}
+<div class="bg-gray-800 rounded-xl p-6 border border-gray-700 max-w-3xl mx-auto" style="height: 70vh; display: flex; flex-direction: column;">
+    <h2 class="text-2xl font-bold text-gray-100 mb-4 text-center">AI Wellness Assistant</h2>
+    <div id="chat-window" class="flex-grow overflow-y-auto mb-4 p-4 bg-gray-900 rounded-lg space-y-4">
+        <!-- Initial Welcome Message -->
+        <div class="p-3 bg-gray-700 rounded-lg self-start max-w-lg">
+            <p class="text-sm">Hello! I'm your AI Wellness Assistant, powered by Google Gemini. Ask me anything about fitness, nutrition, or general wellness. Please note, I am not a medical professional.</p>
+        </div>
+    </div>
+    <form id="chat-form" class="flex gap-4">
+        <input type="text" id="chat-input" class="flex-grow bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Ask a question..." required>
+        <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg transition">Send</button>
+    </form>
+</div>
+
+<script>
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatWindow = document.getElementById('chat-window');
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userMessage = chatInput.value;
+        if (!userMessage.trim()) return;
+
+        // Display user's message
+        const userBubble = document.createElement('div');
+        userBubble.className = 'p-3 bg-sky-800 rounded-lg self-end max-w-lg ml-auto';
+        userBubble.textContent = userMessage;
+        chatWindow.appendChild(userBubble);
+        chatInput.value = '';
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        // Display a loading indicator
+        const loadingBubble = document.createElement('div');
+        loadingBubble.className = 'p-3 bg-gray-700 rounded-lg self-start max-w-lg animate-pulse';
+        loadingBubble.textContent = 'Thinking...';
+        chatWindow.appendChild(loadingBubble);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        // Send the message to the backend API
+        try {
+            const response = await fetch("{{ url_for('api_chatbot') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMessage })
+            });
+            const data = await response.json();
+
+            // Display the AI's response
+            loadingBubble.textContent = data.reply;
+            loadingBubble.classList.remove('animate-pulse');
+        } catch (error) {
+            loadingBubble.textContent = 'Sorry, there was an error connecting to the AI assistant.';
+            loadingBubble.classList.remove('animate-pulse');
+            loadingBubble.classList.add('bg-rose-800');
+        } finally {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+    });
+</script>
+{% endblock %}
+

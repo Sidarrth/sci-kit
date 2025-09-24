@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block title %}Nutrition Hub{% endblock %}
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Calorie Summary -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-lg">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4 text-center">Your Daily Calorie Summary</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div>
+                <p class="text-sm text-gray-400">Your Daily Budget (TDEE)</p>
+                <p class="text-4xl font-bold text-sky-400" title="Based on your age, gender, weight, and height.">{{ tdee }}</p>
+                <p class="text-xs text-gray-500">Calories</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Food Eaten Today</p>
+                <p class="text-4xl font-bold text-amber-400">{{ calories_consumed }}</p>
+                <p class="text-xs text-gray-500">Calories</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Exercise Burned Today</p>
+                <p class="text-4xl font-bold text-rose-400">{{ calories_burned }}</p>
+                 <p class="text-xs text-gray-500">Calories</p>
+            </div>
+        </div>
+        <div class="mt-6 pt-6 border-t border-gray-700 text-center">
+            <p class="text-lg text-gray-300">Net Calorie Balance Today</p>
+            <p class="text-5xl font-bold {{ 'text-emerald-400' if (tdee - calories_consumed + calories_burned) >= 0 else 'text-rose-400' }}">
+                {{ tdee - calories_consumed + calories_burned }}
+            </p>
+            <p class="text-sm text-gray-400 mt-1">Remaining for today</p>
+        </div>
+    </div>
+
+    <!-- Log Meal with Gemini -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Log a Meal with AI</h2>
+        <form action="{{ url_for('log_food') }}" method="post" class="flex items-center gap-4">
+            <input type="text" name="food_description" placeholder="e.g., A bowl of oatmeal with berries and nuts" class="flex-grow bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white" required>
+            <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg transition">Analyze & Log</button>
+        </form>
+    </div>
+
+    <!-- Today's Logged Meals -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Today's Food Log</h2>
+        <ul class="space-y-3">
+            {% for log in food_logs %}
+            <li class="p-4 bg-gray-900 rounded-lg flex justify-between items-center">
+                <p class="font-semibold">{{ log.meal_description }}</p>
+                <p class="text-lg font-bold text-amber-400">{{ log.calories }} kcal</p>
+            </li>
+            {% else %}
+            <li class="text-gray-400 text-center py-4">No meals logged for today yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
