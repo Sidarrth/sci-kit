@@ -2,83 +2,92 @@
 {% block title %}Your Profile{% endblock %}
 {% block content %}
 <div class="space-y-8">
-    <!-- User Settings -->
+    <!-- User Information -->
     <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Settings</h2>
-        <form action="{{ url_for('profile') }}" method="post" class="max-w-md">
-            <div>
-                <label for="location" class="block text-sm font-medium text-gray-300">Your Location (for Weather)</label>
-                <input type="text" name="location" id="location" value="{{ current_user.location or '' }}" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" placeholder="e.g., London, UK">
-            </div>
-            <div class="mt-4">
-                <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg">Save Settings</button>
-            </div>
-        </form>
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Information</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div class="p-4 bg-gray-900 rounded-lg"><div class="text-sm text-gray-400">Age</div><div class="text-2xl font-bold">{{ current_user.age }}</div></div>
+            <div class="p-4 bg-gray-900 rounded-lg"><div class="text-sm text-gray-400">Gender</div><div class="text-2xl font-bold capitalize">{{ current_user.gender }}</div></div>
+            <div class="p-4 bg-gray-900 rounded-lg"><div class="text-sm text-gray-400">Weight</div><div class="text-2xl font-bold">{{ current_user.weight_kg }} kg</div></div>
+            <div class="p-4 bg-gray-900 rounded-lg"><div class="text-sm text-gray-400">Height</div><div class="text-2xl font-bold">{{ current_user.height_cm }} cm</div></div>
+        </div>
+        <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center">
+            <div class="text-sm text-gray-400">Fitness Goal</div>
+            <div class="text-2xl font-bold capitalize">{{ current_user.fitness_goal.replace('_', ' ') }}</div>
+        </div>
     </div>
-
-    <!-- User Schedule Manager -->
+<div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+    <h2 class="text-2xl font-bold text-gray-100 mb-4">Edit Your Location</h2>
+    <form action="{{ url_for('profile') }}" method="post" class="flex items-center gap-4">
+        <input type="text" name="location" class="flex-grow bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white" placeholder="e.g., London, UK" value="{{ current_user.location }}">
+        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg">Save Location</button>
+    </form>
+</div>
+    
+    <!-- Editable Weekly Schedule -->
     <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Schedule</h2>
-        <form action="{{ url_for('profile') }}" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
-            <div class="md:col-span-2">
-                <label for="event_name" class="block text-sm font-medium text-gray-300">Event Name</label>
-                <input type="text" name="event_name" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Edit Your Weekly Schedule</h2>
+        <div class="space-y-6">
+            {% for day_num, day_name in [(0, 'Monday'), (1, 'Tuesday'), (2, 'Wednesday'), (3, 'Thursday'), (4, 'Friday'), (5, 'Saturday'), (6, 'Sunday')] %}
+            <div class="p-4 bg-gray-900 rounded-lg">
+                <h3 class="font-semibold text-gray-200 text-lg mb-3">{{ day_name }}</h3>
+                <form action="{{ url_for('profile') }}" method="post" class="space-y-3" data-day-form="{{ day_num }}">
+                    <input type="hidden" name="day_of_week" value="{{ day_num }}">
+                    <div id="schedule-container-{{ day_num }}" class="space-y-2">
+                        {% set events_for_day = schedule | selectattr('day_of_week', 'equalto', day_num) | list %}
+                        {% if events_for_day %}
+                            {% for event in events_for_day %}
+                            <div class="flex items-center gap-2 event-row">
+                                <input type="text" name="event_name[]" class="flex-grow px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" value="{{ event.event_name }}" required>
+                                <input type="time" name="start_time[]" class="px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" value="{{ event.start_time }}" required>
+                                <input type="time" name="end_time[]" class="px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" value="{{ event.end_time }}" required>
+                                <button type="button" class="remove-event-btn text-rose-500 hover:text-rose-400 font-bold">X</button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-4 pt-2">
+                        <button type="button" class="add-event-btn text-sm text-sky-400 hover:text-sky-300" data-day-num="{{ day_num }}">+ Add Event</button>
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-3 rounded-lg text-sm">Save {{ day_name }}</button>
+                    </div>
+                </form>
             </div>
-            <div>
-                <label for="start_hour" class="block text-sm font-medium text-gray-300">Start Time (24h)</label>
-                <input type="number" step="0.5" name="start_hour" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
-            </div>
-            <div>
-                <label for="end_hour" class="block text-sm font-medium text-gray-300">End Time (24h)</label>
-                <input type="number" step="0.5" name="end_hour" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
-            </div>
-            <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg md:col-start-4">Add Event</button>
-        </form>
-        <ul class="space-y-2">
-            {% for event in schedule %}
-            <li class="flex justify-between items-center p-3 bg-gray-900 rounded-lg">
-                <span>{{ event.event_name }} ({{ "%.2f"|format(event.start_hour) }} - {{ "%.2f"|format(event.end_hour) }})</span>
-                <a href="{{ url_for('delete_event', event_id=event.id) }}" class="text-rose-500 hover:text-rose-400">Delete</a>
-            </li>
-            {% else %}
-            <li class="text-gray-400">Your schedule is empty.</li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Hobbies Manager -->
-    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Hobbies</h2>
-        <form action="{{ url_for('profile') }}" method="post" class="flex gap-4 items-end mb-6">
-            <div class="flex-grow">
-                <label for="hobby_name" class="block text-sm font-medium text-gray-300">Hobby Name</label>
-                <input type="text" name="hobby_name" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3" required>
-            </div>
-            <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg">Add Hobby</button>
-        </form>
-        <ul class="space-y-2">
-            {% for hobby in hobbies %}
-            <li class="p-3 bg-gray-900 rounded-lg"><span>{{ hobby.name }}</span></li>
-            {% else %}
-            <li class="text-gray-400">No hobbies listed.</li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Awarded Badges -->
-    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Badges</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            {% for badge in badges %}
-            <div class="text-center" title="{{ badge.description }}">
-                <div class="text-6xl">{{ badge.icon }}</div>
-                <p class="mt-2 text-sm font-semibold">{{ badge.name }}</p>
-            </div>
-            {% else %}
-            <p class="text-gray-400 col-span-full">No badges earned yet.</p>
             {% endfor %}
         </div>
     </div>
+
+    <!-- Hobbies Display -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Hobbies</h2>
+        <ul class="flex flex-wrap gap-2">
+            {% for hobby in hobbies %}
+                <li class="bg-sky-800 text-sky-200 text-sm font-medium px-3 py-1 rounded-full">{{ hobby.name }}</li>
+            {% else %}
+                <li class="text-gray-400">No hobbies listed. You can add them during registration.</li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
+
+<script>
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('add-event-btn')) {
+        const dayNum = e.target.dataset.dayNum;
+        const eventContainer = document.getElementById(`schedule-container-${dayNum}`);
+        const eventRow = document.createElement('div');
+        eventRow.className = 'flex items-center gap-2 event-row';
+        eventRow.innerHTML = `
+            <input type="text" name="event_name[]" class="flex-grow px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" placeholder="Event Name" required>
+            <input type="time" name="start_time[]" class="px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" required>
+            <input type="time" name="end_time[]" class="px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" required>
+            <button type="button" class="remove-event-btn text-rose-500 hover:text-rose-400 font-bold">X</button>
+        `;
+        eventContainer.appendChild(eventRow);
+    }
+    if (e.target.classList.contains('remove-event-btn')) {
+        e.target.closest('.event-row').remove();
+    }
+});
+</script>
 {% endblock %}
 

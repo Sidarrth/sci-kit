@@ -3,65 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Aura Wellness</title>
+    <title>Register - SoulHealth</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; } </style>
 </head>
 <body class="text-gray-200">
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8 p-10 bg-gray-900 rounded-xl shadow-lg">
-            <div>
-                <h2 class="mt-6 text-center text-3xl font-extrabold text-emerald-400">Create your account</h2>
-            </div>
+    <div class="min-h-screen flex items-center justify-center py-12 px-4">
+        <div class="max-w-4xl w-full space-y-8 p-10 bg-gray-900 rounded-xl shadow-lg">
+            <div><h2 class="text-center text-3xl font-extrabold text-emerald-400">Create Your SoulHealth Profile</h2></div>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="mt-4 px-4 py-3 rounded-md bg-rose-800 text-rose-200">
-                            <p>{{ message }}</p>
-                        </div>
-                    {% endfor %}
+                    {% for category, message in messages %}<div class="mt-4 px-4 py-3 rounded-md bg-rose-800 text-rose-200"><p>{{ message }}</p></div>{% endfor %}
                 {% endif %}
             {% endwith %}
-            <form class="mt-8 space-y-6" action="{{ url_for('register') }}" method="POST">
-                <div class="rounded-md shadow-sm -space-y-px">
-                    <div>
-                        <input name="username" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 placeholder-gray-400 text-gray-200 rounded-t-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" placeholder="Username">
+            <form id="register-form" class="mt-8 space-y-8" action="{{ url_for('register') }}" method="POST">
+                
+                <!-- Step 1: Account & Biometrics -->
+                <div class="p-6 bg-gray-800 rounded-lg border border-gray-700">
+                    <h3 class="text-xl font-bold text-gray-100 mb-4">Step 1: Basic Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <input name="username" type="text" required class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md" placeholder="Username">
+                        <input name="password" type="password" required class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md" placeholder="Password">
+                        <input name="age" type="number" min="1" required class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md" placeholder="Age">
+                        <select name="gender" required class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md"><option value="male">Male</option><option value="female">Female</option></select>
+                        <input name="weight_kg" type="number" step="0.1" min="1" required class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md" placeholder="Weight (kg)">
+                        <input name="height_cm" type="number" step="0.1" min="1" required class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md" placeholder="Height (cm)">
                     </div>
-                    <div>
-                        <input name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 placeholder-gray-400 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" placeholder="Password">
-                    </div>
-                    <div class="grid grid-cols-2 gap-x-2 pt-2">
+                </div>
+
+                <!-- Step 2: Goals & Hobbies -->
+                <div class="p-6 bg-gray-800 rounded-lg border border-gray-700">
+                    <h3 class="text-xl font-bold text-gray-100 mb-4">Step 2: Your Lifestyle</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                           <input id="age" name="age" type="number" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 placeholder-gray-400 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" placeholder="Age">
-                        </div>
-                         <div>
-                            <select id="gender" name="gender" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
-                                <option>male</option>
-                                <option>female</option>
+                            <label for="fitness_goal" class="block text-sm font-medium text-gray-300 mb-1">Primary Fitness Goal</label>
+                            <select id="fitness_goal" name="fitness_goal" required class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md">
+                                <option value="lose_weight">Lose Weight</option><option value="maintain">Maintain Weight</option><option value="gain_weight">Gain Weight</option>
                             </select>
                         </div>
-                    </div>
-                     <div class="grid grid-cols-2 gap-x-2 pt-2">
                         <div>
-                           <input name="weight_kg" type="number" step="0.1" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 placeholder-gray-400 text-gray-200 rounded-bl-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" placeholder="Weight (kg)">
-                        </div>
-                         <div>
-                            <input name="height_cm" type="number" step="0.1" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 placeholder-gray-400 text-gray-200 rounded-br-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500" placeholder="Height (cm)">
+                            <label for="hobbies" class="block text-sm font-medium text-gray-300 mb-1">Your Hobbies (comma separated)</label>
+                            <input id="hobbies" name="hobbies" type="text" class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md" placeholder="e.g., Guitar, Reading, Painting">
                         </div>
                     </div>
                 </div>
+                
+                <!-- Step 3: Weekly Schedule -->
+                <div class="p-6 bg-gray-800 rounded-lg border border-gray-700">
+                    <h3 class="text-xl font-bold text-gray-100 mb-4">Step 3: Your Typical Weekly Schedule</h3>
+                    <p class="text-sm text-gray-400 mb-4">Add your fixed commitments like work, classes, or appointments. The AI will use this to find free time for you.</p>
+                    <div id="schedule-container" class="space-y-4">
+                        <!-- Schedule rows will be added here by JavaScript -->
+                    </div>
+                </div>
+
                 <div>
-                    <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                        Sign up
-                    </button>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700">Create My Account</button>
                 </div>
             </form>
-            <p class="text-center text-sm text-gray-400">
-                Already have an account? <a href="{{ url_for('login') }}" class="font-medium text-emerald-400 hover:text-emerald-300">Sign in</a>
-            </p>
+            <p class="text-center text-sm text-gray-400">Already have an account? <a href="{{ url_for('login') }}" class="font-medium text-emerald-400 hover:text-emerald-300">Sign in</a></p>
         </div>
     </div>
+<script>
+    const scheduleContainer = document.getElementById('schedule-container');
+    const days = [
+        { name: 'Monday', short: 'mon' }, { name: 'Tuesday', short: 'tue' },
+        { name: 'Wednesday', short: 'wed' }, { name: 'Thursday', short: 'thu' },
+        { name: 'Friday', short: 'fri' }, { name: 'Saturday', short: 'sat' },
+        { name: 'Sunday', short: 'sun' }
+    ];
+
+    days.forEach((day, index) => {
+        const dayDiv = document.createElement('div');
+        dayDiv.id = `schedule-${day.short}`;
+        dayDiv.innerHTML = `
+            <div class="flex items-center justify-between">
+                <label class="block text-md font-medium text-gray-200">${day.name}</label>
+                <button type="button" class="add-event-btn text-sm text-sky-400 hover:text-sky-300" data-day="${day.short}">+ Add Event</button>
+            </div>
+            <div id="events-${day.short}" class="pl-4 mt-2 space-y-2 border-l-2 border-gray-700">
+                <!-- Event inputs will be added here -->
+            </div>
+        `;
+        scheduleContainer.appendChild(dayDiv);
+    });
+
+    scheduleContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-event-btn')) {
+            const day = e.target.dataset.day;
+            const eventContainer = document.getElementById(`events-${day}`);
+            const eventRow = document.createElement('div');
+            eventRow.className = 'flex items-center gap-2';
+            eventRow.innerHTML = `
+                <input type="text" name="${day}_event_name[]" class="flex-grow px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" placeholder="Event Name" required>
+                <input type="time" name="${day}_start_time[]" class="px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" required>
+                <input type="time" name="${day}_end_time[]" class="px-2 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm" required>
+                <button type="button" class="remove-event-btn text-rose-500 hover:text-rose-400 font-bold">X</button>
+            `;
+            eventContainer.appendChild(eventRow);
+        }
+        if (e.target.classList.contains('remove-event-btn')) {
+            e.target.parentElement.remove();
+        }
+    });
+</script>
 </body>
 </html>
 

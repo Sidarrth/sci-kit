@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}Your Exercise Plan{% endblock %}
+{% block content %}
+<div class="bg-gray-800 rounded-xl p-6 border border-gray-700 max-w-3xl mx-auto space-y-4">
+    <h2 class="text-2xl font-bold text-gray-100 text-center">Your Customized Exercise Plan</h2>
+    <div class="text-gray-300 whitespace-pre-wrap font-mono text-sm">
+        {{ exercise_plan }}
+    </div>
+    <div class="text-center">
+        <a href="{{ url_for('dashboard') }}" class="inline-block mt-4 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

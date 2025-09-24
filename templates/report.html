@@ -15,16 +15,18 @@
                 <thead class="text-xs text-gray-300 uppercase bg-gray-700">
                     <tr>
                         <th scope="col" class="px-6 py-3">Date</th>
+                        <th scope="col" class="px-6 py-3">Mood</th>
                         <th scope="col" class="px-6 py-3">Steps</th>
                         <th scope="col" class="px-6 py-3">Sleep (hrs)</th>
                         <th scope="col" class="px-6 py-3">Resting HR</th>
-                        <th scope="col" class="px-6 py-3">Calories Burned</th>
+                        <th scope="col" class="px-6 py-3">Exercise Calories</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for day in health_data %}
-                    <tr class="bg-gray-800 border-b border-gray-700">
+                    <tr class="bg-gray-900 border-b border-gray-700 hover:bg-gray-800">
                         <td class="px-6 py-4 font-medium text-gray-100 whitespace-nowrap">{{ day.date.strftime('%A, %b %d') }}</td>
+                        <td class="px-6 py-4">{{ day.mood or 'N/A' }}</td>
                         <td class="px-6 py-4">{{ day.steps }}</td>
                         <td class="px-6 py-4">{{ day.sleep }}</td>
                         <td class="px-6 py-4">{{ day.heart_rate }}</td>
@@ -32,7 +34,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-8">No data logged in the past 7 days. Use the Dashboard to log or simulate data.</td>
+                        <td colspan="6" class="text-center py-8 text-gray-500">No data logged in the past 7 days. Use the Dashboard to log or simulate data.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
