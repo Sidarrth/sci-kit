@@ -1,0 +1,272 @@
+{% extends "layout.html" %}
+{% block title %}Your Profile{% endblock %}
+{% block content %}
+<div class="space-y-8">
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Profile Settings</h2>
+        <form method="post">
+            <div class="mb-4">
+                <label for="location" class="block text-gray-300 text-sm font-bold mb-2">Location (for Weather)</label>
+                <input type="text" name="location" id="location" value="{{ user.location }}"
+                    class="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-gray-200 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g., London, UK">
+                <p class="text-xs text-gray-500 mt-1">This is used for the Environmental Advisor on your dashboard.</p>
+            </div>
+            <button type="submit"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300">
+                Update Profile
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Your Schedule</h2>
+        <p class="text-gray-400 mb-4">This schedule is used by the AI Time-Finder to recommend the best time for your
+            workouts. (Editing functionality coming soon).</p>
+        <div class="space-y-2">
+            {% for event in schedule %}
+            <div class="bg-gray-700 p-3 rounded-md flex justify-between">
+                <span>{{ event.event_name }}</span>
+                <span>{{ "%.2f"|format(event.start_hour) }} - {{ "%.2f"|format(event.end_hour) }}</span>
+            </div>
+            {% else %}
+            <p class="text-gray-500">You have no schedule events.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- New personal details block -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Personal Details</h2>
+        <form id="personalDetailsForm" onsubmit="return false;">
+            <div class="mb-4">
+                <label for="name" class="block text-gray-300 text-sm font-bold mb-2">Name</label>
+                <input type="text" name="name" id="name"
+                    class="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-gray-200 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Your name">
+            </div>
+            <div class="mb-4">
+                <label for="age" class="block text-gray-300 text-sm font-bold mb-2">Age</label>
+                <input type="number" name="age" id="age" min="0"
+                    class="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-gray-200 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Your age">
+            </div>
+            <div class="mb-4">
+                <label for="gender" class="block text-gray-300 text-sm font-bold mb-2">Gender</label>
+                <select name="gender" id="gender"
+                    class="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-gray-200 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="" disabled selected>Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="height" class="block text-gray-300 text-sm font-bold mb-2">Height (cm)</label>
+                <input type="number" name="height" id="height" min="0" step="any"
+                    class="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-gray-200 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Your height in centimeters">
+            </div>
+            <div class="mb-4">
+                <label for="weight" class="block text-gray-300 text-sm font-bold mb-2">Weight (kg)</label>
+                <input type="number" name="weight" id="weight" min="0" step="any"
+                    class="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-gray-200 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Your weight in kilograms">
+            </div>
+            <div class="mb-4">
+                <button onclick="calculateBMI()"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300">
+                    Calculate BMI
+                </button>
+            </div>
+            <div>
+                <p class="text-gray-300 font-semibold">Your BMI: <span id="bmiResult">--</span></p>
+                <p class="text-gray-300 font-semibold">Health Status: <span id="healthStatus">--</span></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function calculateBMI() {
+        const heightCm = parseFloat(document.getElementById('height').value);
+        const weightKg = parseFloat(document.getElementById('weight').value);
+        if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) {
+            alert('Please enter valid positive numbers for height and weight.');
+            return;
+        }
+        const heightM = heightCm / 100;
+        const bmi = weightKg / (heightM * heightM);
+        document.getElementById('bmiResult').textContent = bmi.toFixed(2);
+
+        let status = '';
+        if (bmi < 18.5) {
+            status = 'Underweight';
+        } else if (bmi < 25) {
+            status = 'Normal weight';
+        } else if (bmi < 30) {
+            status = 'Overweight';
+        } else {
+            status = 'Obese';
+        }
+        document.getElementById('healthStatus').textContent = status;
+    }
+</script>
+
+
+<div class="space-y-8">
+
+    <!-- Existing blocks -->
+
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4">Daily Time Table</h2>
+        <p class="text-gray-400 mb-4">
+            Add activities with start and end times. Upon finalizing, enter the day below before completing your
+            schedule.
+        </p>
+
+        <!-- New Day input, hidden initially -->
+        <div id="dayInputSection" class="mb-4 hidden">
+            <label for="dayInput" class="block text-gray-300 font-bold mb-2">Enter Day:</label>
+            <input type="text" id="dayInput" placeholder="e.g. Monday, 2025-09-24"
+                class="shadow border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <button id="confirmDayBtn"
+                class="mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Confirm Day
+            </button>
+        </div>
+
+        <div class="mb-4 flex items-center space-x-4">
+            <label for="activityStart" class="text-gray-300 font-bold">Start Time:</label>
+            <input type="time" id="activityStart" value="08:00"
+                class="shadow border border-gray-600 rounded py-1 px-2 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <label for="activityEnd" class="text-gray-300 font-bold">End Time:</label>
+            <input type="time" id="activityEnd" value="09:00"
+                class="shadow border border-gray-600 rounded py-1 px-2 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div class="mb-4 flex items-center space-x-4">
+            <label for="activityName" class="text-gray-300 font-bold">Activity:</label>
+            <input type="text" id="activityName" placeholder="Enter activity"
+                class="shadow border border-gray-600 rounded py-1 px-2 bg-gray-700 text-gray-200 flex-grow focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <button id="addActivityBtn"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Add
+            </button>
+            <button id="finalizeBtn"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Finalize
+            </button>
+        </div>
+        <div class="overflow-auto max-h-72 border border-gray-600 rounded bg-gray-900 p-2">
+            <table class="w-full text-left text-gray-200">
+                <thead>
+                    <tr class="border-b border-gray-600">
+                        <th class="py-1 px-2">Start</th>
+                        <th class="py-1 px-2">End</th>
+                        <th class="py-1 px-2">Activity</th>
+                    </tr>
+                </thead>
+                <tbody id="timeTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function timeToMinutes(t) {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+    }
+    function minutesToTime(m) {
+        const h = Math.floor(m / 60).toString().padStart(2, "0");
+        const min = (m % 60).toString().padStart(2, "0");
+        return `${h}:${min}`;
+    }
+
+    const addBtn = document.getElementById("addActivityBtn");
+    const finalizeBtn = document.getElementById("finalizeBtn");
+    const confirmDayBtn = document.getElementById("confirmDayBtn");
+    const dayInputSection = document.getElementById("dayInputSection");
+    const dayInput = document.getElementById("dayInput");
+    const tbody = document.getElementById("timeTableBody");
+    const actName = document.getElementById("activityName");
+    const actStart = document.getElementById("activityStart");
+    const actEnd = document.getElementById("activityEnd");
+
+    let intervals = [];
+
+    addBtn.onclick = () => {
+        const name = actName.value.trim(),
+            start = actStart.value,
+            end = actEnd.value;
+        if (!name) {
+            alert("Enter activity name.");
+            return;
+        }
+        if (!start || !end) {
+            alert("Enter start and end times.");
+            return;
+        }
+        if (timeToMinutes(end) <= timeToMinutes(start)) {
+            alert("End must be after start.");
+            return;
+        }
+        for (const i of intervals) {
+            if (
+                !(
+                    timeToMinutes(end) <= timeToMinutes(i.start) ||
+                    timeToMinutes(start) >= timeToMinutes(i.end)
+                )
+            ) {
+                alert("Interval overlaps existing one.");
+                return;
+            }
+        }
+        intervals.push({ start, end, activity: name });
+        intervals.sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+        actName.value = "";
+        rebuild();
+    };
+
+    finalizeBtn.onclick = () => {
+        // Show the day input prompt when Finalize clicked
+        dayInputSection.classList.remove("hidden");
+        finalizeBtn.disabled = true;
+        addBtn.disabled = true;
+    };
+
+    confirmDayBtn.onclick = () => {
+        const enteredDay = dayInput.value.trim();
+        if (!enteredDay) {
+            alert("Please enter the day.");
+            return;
+        }
+        // You can use enteredDay to label or process schedule if needed later.
+
+        // Now proceed with auto-fill (existing logic can be run here or later)
+        // For now just notify user, gap fill can be implemented on confirm if desired.
+
+        alert(`Day confirmed as: ${enteredDay}. You can now implement auto-fill here if desired.`);
+
+        // Optional: re-enable finalize and add if you want user to add more activities after confirmation
+        finalizeBtn.disabled = false;
+        addBtn.disabled = false;
+
+        // Hide the day input after confirmation if you want:
+        // dayInputSection.classList.add("hidden");
+    };
+
+    function rebuild() {
+        tbody.innerHTML = "";
+        intervals.forEach((i) => {
+            const tr = document.createElement("tr");
+            ["start", "end", "activity"].forEach((k) => {
+                const td = document.createElement("td");
+                td.textContent = i[k];
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+    }
+</script>
+{% endblock %}
