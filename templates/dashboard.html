@@ -1,20 +1,136 @@
 {% extends "layout.html" %}
 {% block title %}Your Dashboard{% endblock %}
+
 {% block content %}
+{% if show_phantoms %}
+<!-- Minecraft Phantoms Easter Egg -->
+<style>
+    #phantom-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Allows clicking through the container */
+        z-index: 1000;
+        overflow: hidden;
+    }
+    .phantom {
+        position: absolute;
+        width: 120px; /* Increased size for better visibility */
+        height: auto;
+        opacity: 0.9;
+        will-change: transform;
+        animation: fly 8s linear infinite;
+        /* Animation properties will be set inline for variety */
+    }
+    .phantom svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 0 5px rgba(3, 169, 244, 0.7)); /* Blueish glow */
+    }
+    @keyframes fly {
+        0% {
+            transform: translateX(-150px) translateY(0vh) rotateZ(-5deg);
+        }
+        50% {
+            transform: translateX(calc(100vw / 2)) translateY(-10vh) rotateZ(0deg);
+        }
+        100% {
+            transform: translateX(calc(100vw + 150px)) translateY(5vh) rotateZ(5deg);
+        }
+    }
+    #phantom-warning {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(120, 5, 5, 0.85);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        z-index: 1001;
+        font-weight: bold;
+        text-align: center;
+        animation: fadeOut 5s forwards;
+    }
+    @keyframes fadeOut {
+        0%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    }
+</style>
+<div id="phantom-container">
+    <div id="phantom-warning">Your sleep has been very low for 3 days! The phantoms are watching.</div>
+
+    <!-- Phantom SVG is now directly embedded -->
+    <div class="phantom" style="top: 20%; animation-duration: 9s;">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="fill:#2c3e50;">
+            <path d="M29.2,12.2l-4.5-2.8c-0.6-0.4-1.4-0.3-1.9,0.3L16,18.2l-6.8-8.5c-0.5-0.6-1.3-0.7-1.9-0.3L2.8,12.2c-0.6,0.4-0.8,1.2-0.5,1.8 l13,16C15.5,30.1,15.7,30,16,30s0.5,0.1,0.7-0.1l13-16C30,13.4,29.8,12.6,29.2,12.2z M16,27.9L4.3,13.2l3.4-2.1l8.3,10.4 c0.2,0.3,0.6,0.5,1,0.5s0.8-0.2,1-0.5l8.3-10.4l3.4,2.1L16,27.9z"/>
+        </svg>
+    </div>
+    <div class="phantom" style="top: 50%; animation-duration: 7s; animation-delay: -3s;">
+       <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="fill:#34495e;">
+            <path d="M29.2,12.2l-4.5-2.8c-0.6-0.4-1.4-0.3-1.9,0.3L16,18.2l-6.8-8.5c-0.5-0.6-1.3-0.7-1.9-0.3L2.8,12.2c-0.6,0.4-0.8,1.2-0.5,1.8 l13,16C15.5,30.1,15.7,30,16,30s0.5,0.1,0.7-0.1l13-16C30,13.4,29.8,12.6,29.2,12.2z M16,27.9L4.3,13.2l3.4-2.1l8.3,10.4 c0.2,0.3,0.6,0.5,1,0.5s0.8-0.2,1-0.5l8.3-10.4l3.4,2.1L16,27.9z"/>
+        </svg>
+    </div>
+    <div class="phantom" style="top: 70%; animation-duration: 11s; animation-delay: -5s;">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="fill:#2c3e50;">
+            <path d="M29.2,12.2l-4.5-2.8c-0.6-0.4-1.4-0.3-1.9,0.3L16,18.2l-6.8-8.5c-0.5-0.6-1.3-0.7-1.9-0.3L2.8,12.2c-0.6,0.4-0.8,1.2-0.5,1.8 l13,16C15.5,30.1,15.7,30,16,30s0.5,0.1,0.7-0.1l13-16C30,13.4,29.8,12.6,29.2,12.2z M16,27.9L4.3,13.2l3.4-2.1l8.3,10.4 c0.2,0.3,0.6,0.5,1,0.5s0.8-0.2,1-0.5l8.3-10.4l3.4,2.1L16,27.9z"/>
+        </svg>
+    </div>
+</div>
+<script>
+    setTimeout(() => {
+        const phantomContainer = document.getElementById('phantom-container');
+        if (phantomContainer) {
+            phantomContainer.remove();
+        }
+    }, 5000);
+</script>
+{% endif %}
+
 <div class="px-4 py-6 sm:px-0">
     <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 class="text-3xl font-bold text-gray-100">Welcome, {{ current_user.username }}!</h1>
         <a href="{{ url_for('simulate_day') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition">Simulate New Day</a>
     </div>
-    
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Content Column -->
         <div class="lg:col-span-2 space-y-8">
+
+            <!-- Daily Performance -->
+            {% if daily_changes %}
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                 <h3 class="text-xl font-semibold text-gray-100 mb-4 text-center">Daily Performance vs. Yesterday</h3>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    {% for metric, data in daily_changes.items() %}
+                     <div class="p-3 bg-gray-900 rounded-lg">
+                         <p class="text-sm text-gray-400 capitalize">{{ metric.replace('_', ' ') }}</p>
+                         <p class="text-2xl font-bold {{ 'text-emerald-400' if data.status == 'positive' else 'text-rose-400' }}">
+                             {{ '+' if data.value > 0 else '' }}{{ data.value }}%
+                             <span class="text-lg">{{ '▲' if data.status == 'positive' else '▼' }}</span>
+                         </p>
+                     </div>
+                    {% endfor %}
+                 </div>
+            </div>
+            {% endif %}
 
             <!-- AI-Powered Insights Section -->
             <div class="bg-gray-800 rounded-xl p-6 border border-emerald-800 shadow-lg">
                 <h3 class="text-xl font-semibold text-emerald-400 mb-4 text-center">Today's Proactive Plan</h3>
                 <div class="divide-y divide-gray-700">
+                    <!-- Mind Body Connection -->
+                    {% if insights.mind_body %}
+                    <div class="flex items-center gap-4 py-3">
+                         <span class="text-2xl">🧠</span>
+                         <div>
+                            <h4 class="font-semibold text-gray-200">Mind-Body Connection</h4>
+                            <p class="text-sm text-gray-400">{{ insights.mind_body.message }}</p>
+                         </div>
+                    </div>
+                    {% endif %}
                     
                     <!-- Environmental Advisor Card -->
                     {% if insights.environment %}
@@ -40,14 +156,14 @@
                     <input type="hidden" name="date" value="{{ next_log_date }}">
                     
                     <div class="flex items-center justify-center space-x-4">
-                        <span class="text-2xl">😞</span>
-                        {% for value, emoji in [('Stressed', '😞'), ('Tired', '😩'), ('Okay', '😐'), ('Good', '🙂'), ('Great', '😊')] %}
+                        <span class="text-2xl">😡</span>
+                         {% for emoji, value in [('😡','Terrible'), ('😟','Bad'), ('😐','Okay'), ('😊','Good'), ('😁','Great')] %}
                         <div class="text-center">
                             <input type="radio" name="mood" value="{{ emoji }} {{ value }}" id="mood_{{value}}" class="peer hidden" required>
                             <label for="mood_{{value}}" class="text-4xl cursor-pointer peer-checked:opacity-100 opacity-50 transition transform peer-checked:scale-125" title="{{ value }}">{{ emoji }}</label>
                         </div>
                         {% endfor %}
-                        <span class="text-2xl">😊</span>
+                        <span class="text-2xl">😁</span>
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -63,14 +179,14 @@
         
         <!-- Right Sidebar -->
         <div class="space-y-8">
-     <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 class="text-xl font-semibold text-gray-100 text-center">Quick Actions</h3>
-         <div class="mt-4 space-y-3">
-            <a href="{{ url_for('exercise_plan') }}" class="block w-full text-center bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg">Get My Exercise Plan</a>
-            <a href="{{ url_for('nutrition') }}" class="block w-full text-center bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg">Go to Nutrition Hub</a>
-         </div>
-     </div>
-</div>
+             <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-100 text-center">Quick Actions</h3>
+                 <div class="mt-4 space-y-3">
+                    <a href="{{ url_for('exercise_plan') }}" class="block w-full text-center bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg">Get My Exercise Plan</a>
+                    <a href="{{ url_for('nutrition') }}" class="block w-full text-center bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-lg">Go to Nutrition Hub</a>
+                 </div>
+             </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -10,6 +10,7 @@ from flask import (Flask, flash, jsonify, redirect, render_template, request, ur
 from flask_login import (LoginManager, UserMixin, current_user, login_required,
                          login_user, logout_user)
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -41,6 +42,8 @@ class User(UserMixin, db.Model):
     food_logs = db.relationship('FoodLog', backref='user', lazy=True, cascade="all, delete-orphan")
     weekly_schedule = db.relationship('WeeklyScheduleEvent', backref='user', lazy=True, cascade="all, delete-orphan")
     hobbies = db.relationship('Hobby', backref='user', lazy=True, cascade="all, delete-orphan")
+    badges = db.relationship('UserBadge', backref='user', lazy=True, cascade="all, delete-orphan")
+
 
     def set_password(self, password): self.password_hash = generate_password_hash(password)
     def check_password(self, password): return check_password_hash(self.password_hash, password)
@@ -53,7 +56,8 @@ class HealthData(db.Model):
     heart_rate = db.Column(db.Integer, default=0)
     calories_burned = db.Column(db.Integer, default=0)
     water_intake_ml = db.Column(db.Integer, default=0)
-    mood = db.Column(db.String(20), nullable=True) # e.g., "😊 Great"
+    mood = db.Column(db.String(20), nullable=True) # e.g., "😊 Good"
+    mood_score = db.Column(db.Integer, nullable=True) # 1-5 score
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class FoodLog(db.Model):
@@ -76,8 +80,94 @@ class Hobby(db.Model):
     name = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+class Badge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.String(200), nullable=False)
+    icon = db.Column(db.String(50), nullable=False) # e.g., 'emoji' or 'font-awesome icon class'
+
+class UserBadge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    badge_id = db.Column(db.Integer, db.ForeignKey('badge.id'), nullable=False)
+    awarded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    badge = db.relationship('Badge')
+
+
 @login_manager.user_loader
 def load_user(user_id): return db.session.get(User, int(user_id))
+
+def check_for_low_sleep(user_id):
+    """Checks if the user has slept less than 5 hours for the last 3 consecutive days."""
+    last_three_sleep_records = HealthData.query.filter_by(user_id=user_id).order_by(HealthData.date.desc()).limit(3).all()
+    if len(last_three_sleep_records) < 3:
+        return False
+    return all(record.sleep < 5.0 for record in last_three_sleep_records)
+
+def calculate_daily_changes(health_data):
+    """Calculates the percentage change for key metrics compared to the previous day."""
+    if len(health_data) < 2: return None
+    today, yesterday = health_data[0], health_data[1]
+    changes = {}
+    for metric in ['steps', 'sleep', 'calories_burned']:
+        today_val, yesterday_val = getattr(today, metric), getattr(yesterday, metric)
+        if yesterday_val > 0:
+            change_pct = round(((today_val - yesterday_val) / yesterday_val) * 100)
+            changes[metric] = {'value': change_pct, 'status': 'positive' if change_pct >= 0 else 'negative'}
+        else: # Handle division by zero
+            changes[metric] = {'value': 100 if today_val > 0 else 0, 'status': 'positive'}
+    return changes
+
+
+def analyze_mind_body_connection(user_id):
+    """Analyzes the correlation between mood and physical activity/sleep."""
+    health_records = HealthData.query.filter_by(user_id=user_id).order_by(HealthData.date.asc()).all()
+    if len(health_records) < 5:
+        return {"strongest_link": "None", "message": "Keep logging your health data for at least 5 days to see mind-body insights!"}
+
+    # Create a pandas DataFrame from the health records
+    data = {
+        'date': [r.date for r in health_records],
+        'sleep': [r.sleep for r in health_records],
+        'steps': [r.steps for r in health_records],
+        'mood_score': [r.mood_score for r in health_records]
+    }
+    health_df = pd.DataFrame(data).dropna(subset=['mood_score'])
+
+    if health_df.shape[0] < 5:
+        return {"strongest_link": "None", "message": "Log your mood more consistently to find connections!"}
+        
+    sleep_corr = health_df['sleep'].corr(health_df['mood_score'])
+    steps_corr = health_df['steps'].corr(health_df['mood_score'])
+    
+    strongest_link, message = "None", "No strong connections found yet. Keep up the great work!"
+    
+    if abs(sleep_corr) > 0.4 or abs(steps_corr) > 0.4:
+        if abs(sleep_corr) > abs(steps_corr):
+            strongest_link, impact = "Sleep", "positive" if sleep_corr > 0 else "negative"
+            message = f"Strong {impact} link found between your sleep and mood."
+        else:
+            strongest_link, impact = "Activity", "positive" if steps_corr > 0 else "negative"
+            message = f"Clear {impact} connection between your steps and how you feel."
+            
+    return {"strongest_link": strongest_link, "message": message}
+
+def check_and_award_badges(user):
+    """Checks user milestones and awards badges if they haven't been awarded yet."""
+    user_badge_ids = {ub.badge_id for ub in user.badges}
+    
+    # Badge 1: First Steps
+    if 1 not in user_badge_ids and HealthData.query.filter_by(user_id=user.id).count() >= 1:
+        db.session.add(UserBadge(user_id=user.id, badge_id=1))
+        flash("Badge Unlocked: First Steps! You've started your journey.", "success")
+        
+    # Badge 2: Marathoner (100k steps)
+    total_steps = db.session.query(func.sum(HealthData.steps)).filter_by(user_id=user.id).scalar() or 0
+    if 2 not in user_badge_ids and total_steps >= 100000:
+        db.session.add(UserBadge(user_id=user.id, badge_id=2))
+        flash("Badge Unlocked: Marathoner! You've walked over 100,000 steps!", "success")
+    
+    db.session.commit()
 
 
 def calculate_tdee(user):
@@ -142,23 +232,16 @@ def find_optimal_slots(schedule, hobbies):
     return {"workout": workout_time, "hobbies": []} # Simplified for now
 
 def get_free_hours_today(schedule_today):
-    # Total minutes in the active day (8:00 AM to 10:00 PM)
     total_minutes = (22 - 8) * 60
-    
-    # Calculate busy minutes from the schedule
     busy_minutes = 0
-    def time_to_minutes(time_str):
-        h, m = map(int, time_str.split(':'))
-        return h * 60 + m
-
+    def time_to_minutes(time_str): h, m = map(int, time_str.split(':')); return h * 60 + m
     for event in schedule_today:
-        start_time_minutes = time_to_minutes(event.start_time)
-        end_time_minutes = time_to_minutes(event.end_time)
+        start_time_minutes = time_to_minutes(event.start_time); end_time_minutes = time_to_minutes(event.end_time)
         busy_minutes += (end_time_minutes - start_time_minutes)
-
-    # Calculate free hours
     free_hours = (total_minutes - busy_minutes) / 60
     return round(free_hours, 1)
+
+# --- Routes ---
 
 @app.route('/')
 def index():
@@ -211,11 +294,38 @@ def dashboard():
     free_hours = get_free_hours_today(schedule_today)
     last_logged_day = HealthData.query.filter_by(user_id=current_user.id).order_by(HealthData.date.desc()).first()
     next_log_date = (last_logged_day.date + timedelta(days=1)) if last_logged_day else date.today()
+
+    # Check for the phantom animation condition
+    show_phantoms = check_for_low_sleep(current_user.id)
+
+    health_data = HealthData.query.filter_by(user_id=current_user.id).order_by(HealthData.date.desc()).limit(2).all()
+    daily_changes = calculate_daily_changes(health_data)
+
     insights = {
         'environment': get_environmental_advice(current_user.location),
-        'slots': find_optimal_slots(schedule_today, hobbies)
+        'mind_body': analyze_mind_body_connection(current_user.id)
     }
-    return render_template('dashboard.html', free_hours=free_hours, next_log_date=next_log_date.isoformat(), insights=insights)
+    return render_template('dashboard.html', free_hours=free_hours, next_log_date=next_log_date.isoformat(), insights=insights, daily_changes=daily_changes, show_phantoms=show_phantoms)
+
+
+@app.route('/leaderboard')
+@login_required
+def leaderboard():
+    """Displays the leaderboard with top users and badges."""
+    # Leaderboard for total steps
+    leaderboard_users = db.session.query(
+        User.username,
+        func.sum(HealthData.steps).label('total_steps')
+    ).join(HealthData).group_by(User.id).order_by(func.sum(HealthData.steps).desc()).limit(10).all()
+
+    # Get all available badges
+    all_badges = Badge.query.all()
+    
+    # Get badges for the current user
+    user_badges = {ub.badge_id for ub in current_user.badges}
+
+    return render_template('leaderboard.html', leaderboard_users=leaderboard_users, all_badges=all_badges, user_badges=user_badges)
+
 
 @app.route('/nutrition')
 @login_required
@@ -229,7 +339,6 @@ def nutrition():
     water_consumed = health_today.water_intake_ml if health_today else 0
     net_calories = tdee - calories_consumed + calories_burned
     
-    # FIX for TypeError: Calculate percentage safely
     water_percentage = 0
     if recommended_water > 0:
         water_percentage = min((water_consumed / recommended_water) * 100, 100)
@@ -244,31 +353,20 @@ def nutrition():
 @app.route('/exercise_plan')
 @login_required
 def exercise_plan():
-    # Gather user data for the prompt
     user_data = {
-        "age": current_user.age,
-        "gender": current_user.gender,
-        "weight_kg": current_user.weight_kg,
-        "height_cm": current_user.height_cm,
-        "fitness_goal": current_user.fitness_goal.replace('_', ' '),
+        "age": current_user.age, "gender": current_user.gender, "weight_kg": current_user.weight_kg,
+        "height_cm": current_user.height_cm, "fitness_goal": current_user.fitness_goal.replace('_', ' '),
         "schedule": [f"{e.event_name} from {e.start_time} to {e.end_time} on day {e.day_of_week}" for e in current_user.weekly_schedule],
         "hobbies": [h.name for h in current_user.hobbies]
     }
-    
-    # Create a detailed prompt for Gemini
     prompt = f"As a fitness coach, create a personalized weekly exercise plan for a user with the following details: {json.dumps(user_data)}. The plan should include specific exercises, sets, and reps. Also, incorporate their hobbies into the plan if possible. The plan must fit within their weekly schedule. Be motivational and concise."
-    
-    # Call the Gemini API
     exercise_plan_text = call_gemini_api("You are an expert fitness coach.", prompt)
-    
-    # Render the new template with the generated plan
     return render_template('exercise_plan.html', exercise_plan=exercise_plan_text)
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     if request.method == 'POST':
-        # FIX: Check which form was submitted
         if 'location' in request.form:
              current_user.location = request.form['location']
              db.session.commit()
@@ -304,8 +402,17 @@ def add_data():
              flash('All health metrics must be positive numbers.', 'error'); return redirect(url_for('dashboard'))
         data = HealthData.query.filter_by(user_id=current_user.id, date=form_date).first()
         if not data: data = HealthData(user_id=current_user.id, date=form_date); db.session.add(data)
-        data.steps = int(request.form['steps']); data.sleep = float(request.form['sleep']); data.heart_rate = int(request.form['heart_rate']); data.calories_burned = int(request.form['calories_burned']); data.mood = request.form['mood']
-        flash('Data logged successfully!', 'success'); db.session.commit()
+        
+        mood_map = {'😡 Terrible': 1, '😟 Bad': 2, '😐 Okay': 3, '😊 Good': 4, '😁 Great': 5}
+        mood_str = request.form['mood']
+        
+        data.steps = int(request.form['steps']); data.sleep = float(request.form['sleep']); data.heart_rate = int(request.form['heart_rate']); data.calories_burned = int(request.form['calories_burned'])
+        data.mood = mood_str
+        data.mood_score = mood_map.get(mood_str)
+        
+        db.session.commit()
+        check_and_award_badges(current_user) # Check for badges after saving
+        flash('Data logged successfully!', 'success')
     except Exception as e: db.session.rollback(); flash(f'Error logging data: {e}', 'error')
     return redirect(url_for('dashboard'))
 
@@ -319,7 +426,7 @@ def log_water():
         today_data = HealthData.query.filter_by(user_id=current_user.id, date=date.today()).first()
         if not today_data:
             today_data = HealthData(user_id=current_user.id, date=date.today()); db.session.add(today_data)
-        today_data.water_intake_ml += water_amount
+        today_data.water_intake_ml = (today_data.water_intake_ml or 0) + water_amount
         db.session.commit(); flash(f'Added {water_amount}ml of water to your log!', 'success')
     except Exception as e:
         db.session.rollback(); flash(f'Error logging water: {e}', 'error')
@@ -341,8 +448,14 @@ def simulate_day():
     new_date = (last_data.date + timedelta(days=1)) if last_data else date.today()
     if HealthData.query.filter_by(user_id=current_user.id, date=new_date).first():
         flash(f'Data for {new_date.strftime("%b %d")} already exists.', 'info'); return redirect(url_for('dashboard'))
-    new_data = HealthData(user_id=current_user.id, date=new_date, steps=random.randint(4000, 12000), sleep=round(random.uniform(6.0, 9.0), 1), heart_rate=random.randint(55, 75), calories_burned=random.randint(300, 700))
-    db.session.add(new_data); db.session.commit(); flash('A new day has been simulated!', 'success'); return redirect(url_for('dashboard'))
+    mood_map = {'😡 Terrible': 1, '😟 Bad': 2, '😐 Okay': 3, '😊 Good': 4, '😁 Great': 5}
+    mood_choice = random.choice(list(mood_map.keys()))
+    new_data = HealthData(user_id=current_user.id, date=new_date, steps=random.randint(4000, 12000), 
+                          sleep=round(random.uniform(4.5, 9.0), 1), heart_rate=random.randint(55, 75), 
+                          calories_burned=random.randint(300, 700), mood=mood_choice, mood_score=mood_map[mood_choice])
+    db.session.add(new_data); db.session.commit()
+    check_and_award_badges(current_user)
+    flash('A new day has been simulated!', 'success'); return redirect(url_for('dashboard'))
     
 @app.route('/api/log-food', methods=['POST'])
 @login_required
@@ -369,9 +482,24 @@ def api_chatbot():
     response = call_gemini_api(system_prompt, user_message)
     return jsonify({"reply": response})
 
-
-if __name__ == '__main__':
+def setup_database(app):
+    """Create tables and seed initial badge data."""
     with app.app_context():
         db.create_all()
+        if Badge.query.count() == 0:
+            badges = [
+                Badge(name='First Steps', description='Log your first health metric.', icon='fa-shoe-prints'),
+                Badge(name='Marathoner', description='Walk 100,000 total steps.', icon='fa-running'),
+                Badge(name='Consistent Logger', description='Log data for 7 days in a row.', icon='fa-calendar-check'),
+                Badge(name='Hydration Hero', description='Meet your water goal for 3 days.', icon='fa-tint')
+            ]
+            db.session.bulk_save_objects(badges)
+            db.session.commit()
+            print("Database seeded with initial badges.")
+
+
+if __name__ == '__main__':
+    setup_database(app)
     app.run(debug=True, port=8081)
+
 

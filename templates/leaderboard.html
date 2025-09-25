@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Leaderboard Column -->
+    <div class="lg:col-span-2 bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h1 class="text-3xl font-bold text-gray-100 mb-4 text-center">🏆 Steps Leaderboard 🏆</h1>
+        <div class="space-y-3">
+            {% for user in leaderboard_users %}
+            <div class="flex items-center p-4 rounded-lg {{ 'bg-amber-900/50 border-amber-500 border' if loop.index <= 3 else 'bg-gray-900' }}">
+                <div class="text-xl font-bold w-10 text-center {{ 'text-amber-400' if loop.index <= 3 else 'text-gray-400' }}">#{{ loop.index }}</div>
+                <div class="flex-grow font-semibold text-gray-200">{{ user.username }}</div>
+                <div class="text-lg font-bold text-sky-400">{{ "{:,}".format(user.total_steps) }} steps</div>
+            </div>
+            {% else %}
+            <p class="text-center text-gray-500 py-8">No user data yet. Start logging your steps!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Badges Column -->
+    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-100 mb-4 text-center">Your Badges</h2>
+        <div class="grid grid-cols-2 gap-4">
+            {% for badge in all_badges %}
+            <div class="p-4 rounded-lg text-center transition-all duration-300
+                {% if badge.id in user_badges %}
+                    bg-emerald-800 border border-emerald-600 shadow-lg scale-105
+                {% else %}
+                    bg-gray-900 opacity-60
+                {% endif %}"
+                title="{{ badge.description }}">
+
+                <i class="fas {{ badge.icon }} text-4xl mb-2
+                {% if badge.id in user_badges %}
+                    text-emerald-400
+                {% else %}
+                    text-gray-500
+                {% endif %}"></i>
+                <h3 class="font-bold
+                {% if badge.id in user_badges %}
+                    text-white
+                {% else %}
+                    text-gray-400
+                {% endif %}">{{ badge.name }}</h3>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="text-xs text-gray-500 text-center mt-4">Keep logging your activities to unlock more badges!</p>
+    </div>
+</div>
+{% endblock %}
+
